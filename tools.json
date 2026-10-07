@@ -1,0 +1,90 @@
+[
+  {
+    "type": "function",
+    "function": {
+      "name": "list_inventory",
+      "description": "Consulta GET /inventory y devuelve la lista completa de productos con id, name, quantity y unit. No modifica el inventario.",
+      "parameters": {
+        "type": "object",
+        "properties": {},
+        "required": [],
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "create_inventory_product",
+      "description": "Envia POST /inventory para crear un producto con nombre, cantidad inicial y unidad de medida. Devuelve el producto creado con su id. Modifica el inventario.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Nombre del producto; debe contener al menos un caracter no blanco.",
+            "minLength": 1,
+            "maxLength": 200,
+            "pattern": "\\S"
+          },
+          "quantity": {
+            "type": "integer",
+            "description": "Cantidad inicial de stock, expresada en la unidad indicada.",
+            "minimum": 0
+          },
+          "unit": {
+            "type": "string",
+            "description": "Unidad de medida, por ejemplo kg, litros o unidades; no puede contener solo espacios.",
+            "minLength": 1,
+            "maxLength": 50,
+            "pattern": "\\S"
+          }
+        },
+        "required": ["name", "quantity", "unit"],
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "adjust_inventory_stock",
+      "description": "Envia PATCH /inventory/{product_id}, sustituyendo product_id en la ruta y enviando delta en el cuerpo JSON. Suma delta al stock: positivo para entradas y negativo para salidas. Devuelve el producto actualizado. Modifica el inventario; devuelve 404 si no existe y 409 si el stock resultante seria negativo.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "product_id": {
+            "type": "integer",
+            "description": "Identificador del producto existente obtenido del inventario."
+          },
+          "delta": {
+            "type": "integer",
+            "description": "Variacion del stock en la unidad del producto. Un valor positivo agrega stock, uno negativo lo retira y cero lo deja sin cambios."
+          }
+        },
+        "required": ["product_id", "delta"],
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "get_inventory_alerts",
+      "description": "Consulta GET /inventory/alerts y devuelve los productos con quantity estrictamente menor que threshold. Envia threshold como parametro de consulta si se proporciona; si se omite, la API usa 10. No modifica el inventario.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "threshold": {
+            "type": "integer",
+            "description": "Umbral de stock no negativo; los productos con cantidad igual al umbral no se incluyen.",
+            "minimum": 0,
+            "default": 10
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      }
+    }
+  }
+]

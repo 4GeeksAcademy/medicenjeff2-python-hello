@@ -1,18 +1,80 @@
-# Python Hello
+# FastAPI Inventory and LLM Agent
 
-The most basic boilerplate to start a Python project at 4Geeks is to start your very first Python project from scratch.
+[Documentacion en espanol](README.es.md)
 
-## What to do next?
+The API stores inventory in `products.csv`. The CLI agent calls the inventory
+API through the functions defined in `tools.json`. Conversation events are
+appended to `conversation_log.csv` and survive between sessions.
 
-Open the `main.py` file and start writing your code.
+## Manual Agent Loop
 
-Execute your code by typing the following command on your terminal:
+The agent loop is implemented manually in Python in `InventoryAgent.run()`:
+observe user input, ask the LLM for the next action, execute tool calls, append
+their results to the conversation, and repeat until a final response or the
+iteration limit. Session memory and CSV event logging are also managed by our
+own code.
+
+No agent framework is used: no LangChain, LlamaIndex, AutoGen, or equivalent.
+The OpenAI SDK only calls the LLM, `httpx` only sends HTTP requests, and
+`jsonschema` only validates tool arguments. FastAPI serves the inventory API;
+none of these libraries orchestrates the agent.
+
+## Start Both Processes
+
+Run these commands from the repository root, using the same Python environment.
+**The API must be running before you start the agent.**
+
+### 1. Install Dependencies
 
 ```bash
-$ python main.py
+python -m pip install -r requirements.txt
 ```
 
-You can create and include as many python files (a.k.a. modules) as you want using the import statements.
+### 2. Terminal 1: Start the API
+
+```bash
+python -m uvicorn main:app --host 0.0.0.0 --port 8000
+```
+
+Wait for `Application startup complete` and keep this terminal running. Use a
+single API worker because inventory is stored in a CSV file. Interactive API
+documentation is available at http://localhost:8000/docs.
+
+### 3. Terminal 2: Check the API and Start the Agent
+
+First verify that the API responds successfully:
+
+```bash
+curl --fail --show-error http://localhost:8000/inventory
+```
+
+If the check fails, fix the API startup before continuing. Configure
+`OPENAI_API_KEY` in this second terminal. In Bash, read it without displaying it
+or including the secret in command history:
+
+```bash
+read -rsp "OpenAI API key: " OPENAI_API_KEY
+printf '\n'
+export OPENAI_API_KEY
+python agent.py
+```
+
+Enter a request at the `Tu:` prompt; the agent prints its response and keeps
+conversation context in memory until the session ends. Type `/salir` to exit.
+For a single request instead:
+
+```bash
+python agent.py "Lista el inventario y muestra las alertas"
+```
+
+Optional settings: `OPENAI_MODEL` (default `gpt-4o-mini`), `INVENTORY_API_URL`
+(default `http://localhost:8000`), and `--max-iterations` (default `10`). If you
+change the API port, update both the check URL and `INVENTORY_API_URL` in the
+agent terminal to match.
+
+Keep the API running throughout the agent session. Once the agent has exited,
+stop the API with Ctrl+C in Terminal 1. Never commit your API key or publish
+conversation logs without reviewing their contents.
 
 ## Requirements
 
